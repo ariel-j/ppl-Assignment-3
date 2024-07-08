@@ -60,7 +60,7 @@ export const typeofExp = (exp: Parsed, tenv: TEnv): Result<TExp> =>
     isStrExp(exp) ? makeOk(typeofStr(exp)) :
     isPrimOp(exp) ? typeofPrim(exp) :
     isVarRef(exp) ? applyTEnv(tenv, exp.var) :
-   // isIfExp(exp) ? typeofIf(exp, tenv) :
+    isIfExp(exp) ? typeofIf(exp, tenv) :
     isProcExp(exp) ? typeofProc(exp, tenv) :
     isAppExp(exp) ? typeofApp(exp, tenv) :
     isLetExp(exp) ? typeofLet(exp, tenv) :
@@ -106,8 +106,8 @@ export const typeofPrim = (p: PrimOp): Result<TExp> =>
     (p.op === '<') ? numCompTExp :
     (p.op === '=') ? numCompTExp :
     // Important to use a different signature for each op with a TVar to avoid capture
-    (p.op === 'number?') ? parseTE('(T -> boolean)') :
-    (p.op === 'boolean?') ? parseTE('(T -> boolean)') :
+    (p.op === 'number?') ? parseTE('(any -> boolean)') :
+    (p.op === 'boolean?') ? parseTE('(any -> boolean)') :
     (p.op === 'string?') ? parseTE('(T -> boolean)') :
     (p.op === 'list?') ? parseTE('(T -> boolean)') :
     (p.op === 'pair?') ? parseTE('(T -> boolean)') :
@@ -144,14 +144,15 @@ export const typeofIfNormal = (ifExp: IfExp, tenv: TEnv): Result<TExp> => {
 };
 
 // L52 Structured methods
-//const isTypePredApp = (e: Exp, tenv: TEnv): Result<{/* Add parameters */}> => {
-//}
+const isTypePredApp = (e: Exp, tenv: TEnv): Result<{/* Add parameters */}> => {
+    //isAppExp(e) ? isVarRef(e.rator) ? e.rator.var
+}
 
-//export const typeofIf = (ifExp: IfExp, tenv: TEnv): Result<TExp> =>
- //   either(
-   //     bind (isTypePredApp(ifExp.test, tenv), ({/* Add parameter here */}) => {}),
-     //   makeOk,
-      //  () => typeofIfNormal(ifExp, tenv));
+export const typeofIf = (ifExp: IfExp, tenv: TEnv): Result<TExp> =>
+   either(
+       bind (isTypePredApp(ifExp.test, tenv), ({/* Add parameter here */}) => {}),
+       makeOk,
+       () => typeofIfNormal(ifExp, tenv));
 
 
 // Purpose: compute the type of a proc-exp
