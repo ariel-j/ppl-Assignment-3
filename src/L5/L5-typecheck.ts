@@ -8,7 +8,9 @@ import { isAppExp, isBoolExp, isDefineExp, isIfExp, isLetrecExp, isLetExp, isNum
 import { applyTEnv, makeEmptyTEnv, makeExtendTEnv, TEnv } from "./TEnv";
 import { isProcTExp, makeBoolTExp, makeNumTExp, makeProcTExp, makeStrTExp, makeVoidTExp,
          parseTE, unparseTExp, makeUnionTExp,
-         BoolTExp, NumTExp, StrTExp, TExp, VoidTExp, isSubType } from "./TExp";
+         BoolTExp, NumTExp, StrTExp, TExp, VoidTExp, isSubType, 
+         isBoolTExp,
+         isPredTExp} from "./TExp";
 import { isEmpty, allT, first, rest, NonEmptyList, List, isNonEmptyList } from '../shared/list';
 import { Result, makeFailure, bind, makeOk, zipWithResult, either } from '../shared/result';
 import { parse as p } from "../shared/parser";
@@ -26,6 +28,7 @@ import { format } from '../shared/format';
 // Union[TEs] contains TE if TE is compatible with one of the TEs
 // Union[TEs1] contains Union[TEs2] if Union[TEs1] contains all elements of Union[TEs2]
 export const checkCompatibleType = (te1: TExp, te2: TExp, exp: Exp): Result<true> =>
+  isBoolTExp(te1) && isPredTExp(te2) ? makeOk(true) :
   isSubType(te1, te2) ? makeOk(true) :
   bind(unparseTExp(te1), (te1: string) =>
     bind(unparseTExp(te2), (te2: string) =>
@@ -57,7 +60,7 @@ export const typeofExp = (exp: Parsed, tenv: TEnv): Result<TExp> =>
     isStrExp(exp) ? makeOk(typeofStr(exp)) :
     isPrimOp(exp) ? typeofPrim(exp) :
     isVarRef(exp) ? applyTEnv(tenv, exp.var) :
-    isIfExp(exp) ? typeofIf(exp, tenv) :
+   // isIfExp(exp) ? typeofIf(exp, tenv) :
     isProcExp(exp) ? typeofProc(exp, tenv) :
     isAppExp(exp) ? typeofApp(exp, tenv) :
     isLetExp(exp) ? typeofLet(exp, tenv) :
@@ -141,14 +144,14 @@ export const typeofIfNormal = (ifExp: IfExp, tenv: TEnv): Result<TExp> => {
 };
 
 // L52 Structured methods
-const isTypePredApp = (e: Exp, tenv: TEnv): Result<{/* Add parameters */}> => {
-}
+//const isTypePredApp = (e: Exp, tenv: TEnv): Result<{/* Add parameters */}> => {
+//}
 
-export const typeofIf = (ifExp: IfExp, tenv: TEnv): Result<TExp> =>
-    either(
-        bind (isTypePredApp(ifExp.test, tenv), ({/* Add parameter here */}) => {}),
-        makeOk,
-        () => typeofIfNormal(ifExp, tenv));
+//export const typeofIf = (ifExp: IfExp, tenv: TEnv): Result<TExp> =>
+ //   either(
+   //     bind (isTypePredApp(ifExp.test, tenv), ({/* Add parameter here */}) => {}),
+     //   makeOk,
+      //  () => typeofIfNormal(ifExp, tenv));
 
 
 // Purpose: compute the type of a proc-exp
@@ -156,7 +159,7 @@ export const typeofIf = (ifExp: IfExp, tenv: TEnv): Result<TExp> =>
 // If   type<body>(extend-tenv(x1=t1,...,xn=tn; tenv)) = t
 // then type<lambda (x1:t1,...,xn:tn) : t exp)>(tenv) = (t1 * ... * tn -> t)
 export const typeofProc = (proc: ProcExp, tenv: TEnv): Result<TExp> => {
-    const argsTEs = map((vd) => vd.texp, proc.args);
+    const argsTEs = map((vd) => vd.texp, proc.args); // type of arguments
     const extTEnv = makeExtendTEnv(map((vd) => vd.var, proc.args), argsTEs, tenv);
     const constraint1 = bind(typeofExps(proc.body, extTEnv), (body: TExp) => 
                             checkCompatibleType(body, proc.returnTE, proc));
