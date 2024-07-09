@@ -421,7 +421,9 @@ const parseProcTExp = (texps: Sexp[]): Result<ProcTExp> => {
            (texps.slice(pos + 1).indexOf('->') > -1) ? makeFailure(`Only one -> allowed in a procexp - ${format(texps)}`) :
            texps[pos+1] === 'is?' ?
             bind(parseTupleTExp(texps.slice(0, pos)), (args: TExp[]) =>
-                makeOk(makeProcTExp(args, makeBoolTExp()))) : 
+                bind(
+                    bind(parseTExp(texps[pos+2]), (te : TExp) : Result<TExp> => makeOk(makePredTExp(te))), 
+                    (predT : TExp) : Result<ProcTExp> => makeOk(makeProcTExp(args, predT)))) :
             bind(parseTupleTExp(texps.slice(0, pos)), (args: TExp[]) =>
                 mapv(parseTExp(texps[pos + 1]), (returnTE: TExp) =>
                         makeProcTExp(args, returnTE)));
